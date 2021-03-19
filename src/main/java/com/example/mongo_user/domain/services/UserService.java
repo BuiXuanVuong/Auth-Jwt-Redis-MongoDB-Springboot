@@ -1,10 +1,13 @@
 package com.example.mongo_user.domain.services;
 
 import com.example.mongo_user.app.dtos.LoginResponse;
+import com.example.mongo_user.app.dtos.TokenRequest;
 import com.example.mongo_user.app.dtos.UserDTO;
 import com.example.mongo_user.domain.config.redisConfig.JwtTokenProvider;
 import com.example.mongo_user.domain.entities.User;
+import com.example.mongo_user.domain.models.TokenInfo;
 import com.example.mongo_user.domain.repositories.UserRepository;
+import org.apache.commons.lang3.RandomStringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
@@ -42,19 +45,41 @@ public class UserService {
     for (User item : userRepository.findAll()) {
       if (item.getUserName().equals(use)) {
         String jwt = tokenProvider.generateToken(use);
-        String refreshToken1 = tokenProvider.generateFreshToken(use);
-        cacheManager.setTokenValue(refreshToken1, use, pass);
-        return ResponseEntity.ok(new LoginResponse(jwt, refreshToken1));
+//        String refreshToken = tokenProvider.generateFreshToken(use);
+        String refreshToken = genRefreshToken();
+        cacheManager.setTokenValue(refreshToken, use, pass);
+        return ResponseEntity.ok(new LoginResponse(jwt, refreshToken));
       }
     }
 
     return null;
   }
 
+  public ResponseEntity<?> refreshToken(TokenRequest refreshTokenRequest) {
+    String refreshToken = refreshTokenRequest.getRefreshToken();
+    TokenInfo tokenInfo = cacheManager.getTokenValue(refreshToken);
+    User user = userRepository.findByUserName(tokenInfo.getUserName());
+    if (user == null) {
+      return null;
+    } else {
+      String jwt = tokenProvider.generateToken(user.getUserName());
+      cacheManager.deleteTokenValue(refreshToken);
+//      String newRefreshToken = tokenProvider.generateFreshToken(user.getUserName());
+      String newRefreshToken = genRefreshToken();
+      cacheManager.setTokenValue(newRefreshToken, tokenInfo.getUserName(), tokenInfo.getPassword());
+      return ResponseEntity.ok(new LoginResponse(jwt, newRefreshToken));
+    }
+  }
+
   public ResponseEntity<?> logout(String token) {
     System.out.println(token);
     cacheManager.deleteValue(token);
     return ResponseEntity.ok("logout");
+  }
+
+    protected String genRefreshToken() {
+    String token = RandomStringUtils.randomAlphabetic(25);
+    return token;
   }
 
 
