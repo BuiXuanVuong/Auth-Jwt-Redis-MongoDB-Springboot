@@ -72,14 +72,9 @@ public class UserService {
   }
 
   public ResponseEntity<?> logout(String token) {
-    System.out.println(token);
+//    System.out.println(token);
     cacheManager.deleteValue(token);
     return ResponseEntity.ok("logout");
-  }
-
-    protected String genRefreshToken() {
-    String token = RandomStringUtils.randomAlphabetic(25);
-    return token;
   }
 
 
