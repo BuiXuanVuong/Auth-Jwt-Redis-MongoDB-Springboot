@@ -45,8 +45,8 @@ public class UserService {
     for (User item : userRepository.findAll()) {
       if (item.getUserName().equals(use)) {
         String jwt = tokenProvider.generateToken(use);
-//        String refreshToken = tokenProvider.generateFreshToken(use);
-        String refreshToken = genRefreshToken();
+        String refreshToken = tokenProvider.generateFreshToken(use);
+//        String refreshToken = genRefreshToken();
         cacheManager.setTokenValue(refreshToken, use, pass);
         return ResponseEntity.ok(new LoginResponse(jwt, refreshToken));
       }
@@ -64,8 +64,8 @@ public class UserService {
     } else {
       String jwt = tokenProvider.generateToken(user.getUserName());
       cacheManager.deleteTokenValue(refreshToken);
-//      String newRefreshToken = tokenProvider.generateFreshToken(user.getUserName());
-      String newRefreshToken = genRefreshToken();
+      String newRefreshToken = tokenProvider.generateFreshToken(user.getUserName());
+//      String newRefreshToken = genRefreshToken();
       cacheManager.setTokenValue(newRefreshToken, tokenInfo.getUserName(), tokenInfo.getPassword());
       return ResponseEntity.ok(new LoginResponse(jwt, newRefreshToken));
     }
