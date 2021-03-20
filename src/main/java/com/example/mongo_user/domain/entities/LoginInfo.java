@@ -6,19 +6,22 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
-import org.springframework.stereotype.Component;
 
-@Document(collection = "User")
+import java.util.Date;
+
+@Document(collection = "login-info")
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
-@Builder
-public class User {
-  @Id
-  private Integer id;
+public class LoginInfo {
+
+
+
+
+  private Integer id_login;
+  private String token_login;
   private String name;
-  private String userName;
-  private String password;
-  private String roleName;
+//  private Date ExpiredJwt;
+  private Integer status;
 
 }

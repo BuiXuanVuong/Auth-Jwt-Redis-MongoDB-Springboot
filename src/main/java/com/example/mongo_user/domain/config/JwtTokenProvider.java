@@ -1,4 +1,4 @@
-package com.example.mongo_user.domain.config.redisConfig;
+package com.example.mongo_user.domain.config;
 
 import com.example.mongo_user.domain.entities.User;
 import io.jsonwebtoken.*;
