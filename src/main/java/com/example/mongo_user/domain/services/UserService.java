@@ -5,18 +5,26 @@ import com.example.mongo_user.app.dtos.TokenRequest;
 import com.example.mongo_user.app.dtos.UserDTO;
 import com.example.mongo_user.domain.config.JwtTokenProvider;
 import com.example.mongo_user.domain.entities.LoginInfo;
+import com.example.mongo_user.domain.entities.Sequence;
 import com.example.mongo_user.domain.entities.User;
 import com.example.mongo_user.domain.models.TokenInfo;
 import com.example.mongo_user.domain.repositories.LoginInfoRepository;
 import com.example.mongo_user.domain.repositories.UserRepository;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.mongodb.core.FindAndModifyOptions;
+import org.springframework.data.mongodb.core.MongoOperations;
+import org.springframework.data.mongodb.core.query.Criteria;
+import org.springframework.data.mongodb.core.query.Query;
+import org.springframework.data.mongodb.core.query.Update;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
 
 
 import java.util.ArrayList;
+import java.util.Date;
+import java.util.Objects;
 import java.util.Optional;
 
 @Service
@@ -24,6 +32,9 @@ import java.util.Optional;
 public class UserService {
   @Autowired
   private UserRepository userRepository;
+
+  @Autowired
+  private MongoOperations mongoOperations;
 
   @Autowired
   private JwtTokenProvider tokenProvider;
@@ -38,8 +49,6 @@ public class UserService {
   private LoginInfoRepository loginInfoRepository;
 
 
-
-
   public ArrayList<UserDTO> getAll() {
     ArrayList<UserDTO> userDTOS = new ArrayList<>();
     for (User item : userRepository.findAll()) {
@@ -49,12 +58,19 @@ public class UserService {
   }
 
   public void createUser(UserDTO userDTO) {
-    User user = User.builder().id(userDTO.getId()).name(userDTO.getName()).userName(userDTO.getUserName()).password(userDTO.getPassword()).roleName(userDTO.getRoleName()).build();
+//    User user = User.builder().id(userDTO.getId()).name(userDTO.getName()).userName(userDTO.getUserName()).password(userDTO.getPassword()).roleName(userDTO.getRoleName()).build();
+    User user = new User();
+    user.setId((int)generateSequence(User.SEQUENCE_NAME));
+    user.setUserName(userDTO.getUserName());
+    user.setPassword(userDTO.getPassword());
+
 
     userRepository.save(user);
   }
 
   public ResponseEntity<?> login(String use, String pass) {
+    Date now = new Date();
+    Date expiryDate = new Date(now.getTime() + tokenProvider.JWT_EXPIRATION);
     LoginInfo loginInfo = new LoginInfo();
     for (User item : userRepository.findAll()) {
       if (item.getUserName().equals(use)) {
@@ -64,6 +80,7 @@ public class UserService {
           cacheManager.deleteValue(loginInfoRepository.findLoginInfoByNameAndStatus(item.getUserName(), 1) .getToken_login());
           LoginInfo loginInfo1 = loginInfoRepository.findLoginInfoByNameAndStatus(item.getUserName(), 1);
           loginInfo1.setStatus(0);
+          loginInfo1.setExpiredJwt(expiryDate);
           loginInfoRepository.deleteLoginInfoByNameAndStatus(item.getUserName(), 1);
           loginInfoRepository.save(loginInfo1);
 
@@ -85,6 +102,7 @@ public class UserService {
         loginInfo.setToken_login(jwt);
         loginInfo.setStatus(1);
         loginInfo.setName(use);
+        loginInfo.setExpiredJwt(expiryDate);
         loginInfoRepository.save(loginInfo);
         return ResponseEntity.ok(new LoginResponse(jwt, refreshToken));
       }
@@ -113,6 +131,16 @@ public class UserService {
 //    System.out.println(token);
     cacheManager.deleteValue(token);
     return ResponseEntity.ok("logout");
+  }
+
+  public long generateSequence(String seqName) {
+    Sequence counter =
+        mongoOperations.findAndModify(
+            Query.query(Criteria.where("_id").is(seqName)),
+            new Update().inc("seq", 1),
+            FindAndModifyOptions.options().returnNew(true).upsert(true),
+            Sequence.class);
+    return !Objects.isNull(counter) ? counter.getSeq() : 1;
   }
 
 

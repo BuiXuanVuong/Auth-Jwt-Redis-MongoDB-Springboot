@@ -38,10 +38,12 @@ public class AuthorizationFilter implements Filter {
     HttpServletResponse response = (HttpServletResponse) servletResponse;
     String url = request.getRequestURI();
     System.out.println("request.getRequestURI" + url );
-    if (url.startsWith("/app")) {
-
-    } else {
+    if ((url.startsWith("/api/users") || url.startsWith("/api/refresh")) && ((HttpServletRequest) servletRequest).getHeader("token")!= null ) {
       filterChain.doFilter(servletRequest, servletResponse);
+    } else if (url.startsWith("/login") || url.startsWith("/user")) {
+      filterChain.doFilter(servletRequest, servletResponse);
+    } else {
+      System.out.println("Bạn phải đăng nhập");
     }
   }
 

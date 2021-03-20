@@ -1,8 +1,10 @@
 package com.example.mongo_user.domain.config;
 
 import com.example.mongo_user.domain.entities.User;
+import com.example.mongo_user.domain.models.TokenInfo;
 import io.jsonwebtoken.*;
 import lombok.extern.slf4j.Slf4j;
+
 import org.springframework.stereotype.Component;
 
 import java.util.Date;
@@ -16,7 +18,7 @@ public class JwtTokenProvider {
   private String JWT_SECRET = "vuong";
 
   // set time jwt
-  private long JWT_EXPIRATION = 2 * 3600 * 1000;
+  public long JWT_EXPIRATION = 2 * 3600 * 1000;
 
   public String generateToken(String userName) {
     Date now = new Date();
@@ -31,6 +33,12 @@ public class JwtTokenProvider {
         .signWith(SignatureAlgorithm.HS512, JWT_SECRET)
         .compact();
   }
+
+//  private Date getExpirationDateFromToken(String token) {
+//    JwtTokenProvider jwtTokenProvider = new JwtTokenProvider();
+//    jwtTokenProvider.getClaims()
+//    return expiration;
+//  }
 
   public String generateFreshToken(String userName) {
     Date now = new Date();
@@ -78,7 +86,7 @@ public class JwtTokenProvider {
 
   private Map<String, Object> getClaims(String userName) {
     Map<String, Object> mClaims = new HashMap<>();
-//    mClaims.put("email", user.getEmail());
+//    mClaims.put("userName", user.getEmail());
 //    mClaims.put("role", user.getRole());
 //    mClaims.put("state", user.getState());
     return mClaims;

@@ -34,7 +34,7 @@ public class UserController {
   @Autowired
   AuthorizationFilter authorizationFilter;
 
-  @PostMapping("/api/user")
+  @PostMapping("/user")
   public ResponseEntity<?> createUser(@RequestBody UserDTO userDTO) {
     userService.createUser(userDTO);
     return ResponseEntity.ok(userDTO);
