@@ -8,10 +8,4 @@ package com.example.mongo_user.domain.services;
 @Service
 public class LoginInfoService {
 
-    @Autowired
-    LoginInfoRepository loginInfoRepository;
-
-//    LoginInfo findById(Integer id) {
-//        return loginInfoRepository.findById_login(id);
-//    }
 }

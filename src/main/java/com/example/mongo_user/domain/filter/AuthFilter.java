@@ -1,15 +1,11 @@
 package com.example.mongo_user.domain.filter;
 
-import com.example.mongo_user.app.dtos.UserDTO;
-
-import com.example.mongo_user.domain.models.TokenInfo;
 import com.example.mongo_user.domain.services.CacheManager;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
-
 import javax.servlet.*;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -19,7 +15,7 @@ import java.io.IOException;
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
-public class AuthorizationFilter implements Filter {
+public class AuthFilter implements Filter {
 
   private ServletContext context;
 
@@ -38,7 +34,8 @@ public class AuthorizationFilter implements Filter {
     HttpServletResponse response = (HttpServletResponse) servletResponse;
     String url = request.getRequestURI();
     System.out.println("request.getRequestURI" + url );
-    if ((url.startsWith("/api/users") || url.startsWith("/api/refresh")) && ((HttpServletRequest) servletRequest).getHeader("token")!= null ) {
+    if ((url.startsWith("/api/users") || url.startsWith("/api/refresh") || url.startsWith("/api/user")) && ((HttpServletRequest) servletRequest).getHeader("token")!= null ) {
+      ((HttpServletResponse) servletResponse).setHeader("token",((HttpServletRequest) servletRequest).getHeader("token"));
       filterChain.doFilter(servletRequest, servletResponse);
     } else if (url.startsWith("/login") || url.startsWith("/user")) {
       filterChain.doFilter(servletRequest, servletResponse);

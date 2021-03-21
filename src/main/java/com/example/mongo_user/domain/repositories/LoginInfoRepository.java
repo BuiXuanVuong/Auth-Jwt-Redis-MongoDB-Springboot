@@ -11,4 +11,5 @@ public interface LoginInfoRepository extends MongoRepository<LoginInfo, Integer>
   LoginInfo findLoginInfoByName (String name);
   void deleteLoginInfoByNameAndStatus(String name, Integer status);
   LoginInfo findLoginInfoByNameAndStatus(String name, Integer status);
+//  LoginInfo findLoginInfoByToken_loginAndStatus(String token_login, Integer status);
 }

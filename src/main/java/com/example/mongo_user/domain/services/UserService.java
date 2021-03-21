@@ -20,12 +20,9 @@ import org.springframework.data.mongodb.core.query.Update;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
-
-
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.Objects;
-import java.util.Optional;
 
 @Service
 @Log4j2
@@ -42,8 +39,6 @@ public class UserService {
   @Autowired
   private CacheManager cacheManager;
 
-  @Autowired
-  private LoginInfoService loginInfoService;
 
   @Autowired
   private LoginInfoRepository loginInfoRepository;
@@ -58,13 +53,19 @@ public class UserService {
   }
 
   public void createUser(UserDTO userDTO) {
-//    User user = User.builder().id(userDTO.getId()).name(userDTO.getName()).userName(userDTO.getUserName()).password(userDTO.getPassword()).roleName(userDTO.getRoleName()).build();
     User user = new User();
     user.setId((int)generateSequence(User.SEQUENCE_NAME));
     user.setUserName(userDTO.getUserName());
     user.setPassword(userDTO.getPassword());
+    user.setRoleName(userDTO.getRoleName());
+    userRepository.save(user);
+  }
 
-
+  public void updateUser(UserDTO userDTO) {
+    User user = userRepository.findOneById(userDTO.getId());
+    user.setUserName(userDTO.getUserName());
+    user.setPassword(userDTO.getPassword());
+    user.setRoleName(userDTO.getRoleName());
     userRepository.save(user);
   }
 
@@ -72,43 +73,30 @@ public class UserService {
     Date now = new Date();
     Date expiryDate = new Date(now.getTime() + tokenProvider.JWT_EXPIRATION);
     LoginInfo loginInfo = new LoginInfo();
-    for (User item : userRepository.findAll()) {
-      if (item.getUserName().equals(use)) {
-        log.info("========== "+loginInfoRepository.findLoginInfoByNameAndStatus(item.getUserName(), 1));
-        if (loginInfoRepository.findLoginInfoByNameAndStatus(item.getUserName(), 1) != null) {
-//        if (loginInfoRepository.findLoginInfoByName(item.getUserName()) != null && loginInfoRepository.findLoginInfoByName(item.getUserName()).getStatus()==1) {
-          cacheManager.deleteValue(loginInfoRepository.findLoginInfoByNameAndStatus(item.getUserName(), 1) .getToken_login());
-          LoginInfo loginInfo1 = loginInfoRepository.findLoginInfoByNameAndStatus(item.getUserName(), 1);
+      if (userRepository.findByUserNameAndPassword(use, pass)!=null) {
+        User user = userRepository.findByUserNameAndPassword(use, pass);
+        log.info(loginInfoRepository.findLoginInfoByNameAndStatus(use, 1));
+        if (loginInfoRepository.findLoginInfoByNameAndStatus(use, 1) != null) {
+          cacheManager.deleteValue(loginInfoRepository.findLoginInfoByNameAndStatus(use, 1) .getToken_login());
+          LoginInfo loginInfo1 = loginInfoRepository.findLoginInfoByNameAndStatus(use, 1);
           loginInfo1.setStatus(0);
           loginInfo1.setExpiredJwt(expiryDate);
-          loginInfoRepository.deleteLoginInfoByNameAndStatus(item.getUserName(), 1);
+          loginInfoRepository.deleteLoginInfoByNameAndStatus(use, 1);
           loginInfoRepository.save(loginInfo1);
-
-
-//          if (loginInfo1.getStatus() == 1) {
-//            cacheManager.deleteValue(loginInfo1.getToken_login());
-//            loginInfo1.setStatus(0);
-//            loginInfoRepository.delete(loginInfo1);
-////            loginInfoRepository.save(loginInfo1);
-//
-//          }
-
         }
         String jwt = tokenProvider.generateToken(use);
         String refreshToken = tokenProvider.generateFreshToken(use);
-//        String refreshToken = genRefreshToken();
         cacheManager.setTokenValue(refreshToken, use, pass);
-        loginInfo.setId_login(item.getId());
+        loginInfo.setId_login(user.getId());
         loginInfo.setToken_login(jwt);
         loginInfo.setStatus(1);
         loginInfo.setName(use);
+        loginInfo.setRoleName(user.getRoleName());
         loginInfo.setExpiredJwt(expiryDate);
         loginInfoRepository.save(loginInfo);
         return ResponseEntity.ok(new LoginResponse(jwt, refreshToken));
       }
-    }
-
-    return null;
+    return ResponseEntity.ok(new String("Sai tài khoản, mật khẩu"));
   }
 
   public ResponseEntity<?> refreshToken(TokenRequest refreshTokenRequest) {
@@ -121,14 +109,17 @@ public class UserService {
       String jwt = tokenProvider.generateToken(user.getUserName());
       cacheManager.deleteTokenValue(refreshToken);
       String newRefreshToken = tokenProvider.generateFreshToken(user.getUserName());
-//      String newRefreshToken = genRefreshToken();
       cacheManager.setTokenValue(newRefreshToken, tokenInfo.getUserName(), tokenInfo.getPassword());
       return ResponseEntity.ok(new LoginResponse(jwt, newRefreshToken));
     }
   }
 
+  public ResponseEntity<?> deleteUser(String userName) {
+    userRepository.deleteUserByUserName(userName);
+    return ResponseEntity.ok("Delete success");
+  }
+
   public ResponseEntity<?> logout(String token) {
-//    System.out.println(token);
     cacheManager.deleteValue(token);
     return ResponseEntity.ok("logout");
   }
@@ -142,8 +133,6 @@ public class UserService {
             Sequence.class);
     return !Objects.isNull(counter) ? counter.getSeq() : 1;
   }
-
-
 }
 
 
