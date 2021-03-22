@@ -51,7 +51,6 @@ public class UserController {
     return userService.deleteUser(user.getUserName());
   }
 
-
   @PostMapping("/api/logout")
   public ResponseEntity Logout(@RequestHeader String token) {
     return userService.logout(token);
