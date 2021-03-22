@@ -1,8 +1,8 @@
-package com.example.mongo_user.domain.config.redisConfig;
+package com.example.mongo_user.domain.config;
 
-import com.example.mongo_user.domain.entities.User;
 import io.jsonwebtoken.*;
 import lombok.extern.slf4j.Slf4j;
+
 import org.springframework.stereotype.Component;
 
 import java.util.Date;
@@ -12,16 +12,14 @@ import java.util.Map;
 @Component
 @Slf4j
 public class JwtTokenProvider {
-  // gen JWT_SECRET
+
   private String JWT_SECRET = "vuong";
 
-  // set time jwt
-  private long JWT_EXPIRATION = 2 * 3600 * 1000;
+  public long JWT_EXPIRATION = 2 * 3600 * 1000;
 
   public String generateToken(String userName) {
     Date now = new Date();
     Date expiryDate = new Date(now.getTime() + JWT_EXPIRATION);
-    // gen jwt from user id
     return Jwts.builder()
         .setHeader(header())
         .setClaims(getClaims(userName))
@@ -37,18 +35,12 @@ public class JwtTokenProvider {
     return Jwts.builder()
         .setHeader(header())
         .setClaims(getClaims(userName))
-//        .setSubject(Long.toString(id))
         .setIssuedAt(now)
-//        .setExpiration(expiryDate)
         .signWith(SignatureAlgorithm.HS512, JWT_SECRET)
         .compact();
   }
 
 
-
-
-
-  // get user info from jwt
   public int getUserIdFromJWT(String token) {
     Claims claims = Jwts.parser()
         .setSigningKey(JWT_SECRET)
@@ -57,8 +49,6 @@ public class JwtTokenProvider {
 
     return Integer.parseInt(claims.getSubject());
   }
-
-
 
   public boolean validateToken(String authToken) {
     try {
@@ -78,9 +68,6 @@ public class JwtTokenProvider {
 
   private Map<String, Object> getClaims(String userName) {
     Map<String, Object> mClaims = new HashMap<>();
-//    mClaims.put("email", user.getEmail());
-//    mClaims.put("role", user.getRole());
-//    mClaims.put("state", user.getState());
     return mClaims;
   }
 

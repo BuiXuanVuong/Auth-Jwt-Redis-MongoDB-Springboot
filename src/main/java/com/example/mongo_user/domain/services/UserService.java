@@ -3,29 +3,46 @@ package com.example.mongo_user.domain.services;
 import com.example.mongo_user.app.dtos.LoginResponse;
 import com.example.mongo_user.app.dtos.TokenRequest;
 import com.example.mongo_user.app.dtos.UserDTO;
-import com.example.mongo_user.domain.config.redisConfig.JwtTokenProvider;
+import com.example.mongo_user.domain.config.JwtTokenProvider;
+import com.example.mongo_user.domain.entities.LoginInfo;
+import com.example.mongo_user.domain.entities.Sequence;
 import com.example.mongo_user.domain.entities.User;
 import com.example.mongo_user.domain.models.TokenInfo;
+import com.example.mongo_user.domain.repositories.LoginInfoRepository;
 import com.example.mongo_user.domain.repositories.UserRepository;
-import org.apache.commons.lang3.RandomStringUtils;
+import lombok.extern.log4j.Log4j2;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.mongodb.core.FindAndModifyOptions;
+import org.springframework.data.mongodb.core.MongoOperations;
+import org.springframework.data.mongodb.core.query.Criteria;
+import org.springframework.data.mongodb.core.query.Query;
+import org.springframework.data.mongodb.core.query.Update;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
-
-
 import java.util.ArrayList;
+import java.util.Date;
+import java.util.Objects;
 
 @Service
+@Log4j2
 public class UserService {
   @Autowired
   private UserRepository userRepository;
+
+  @Autowired
+  private MongoOperations mongoOperations;
 
   @Autowired
   private JwtTokenProvider tokenProvider;
 
   @Autowired
   private CacheManager cacheManager;
+
+
+  @Autowired
+  private LoginInfoRepository loginInfoRepository;
+
 
   public ArrayList<UserDTO> getAll() {
     ArrayList<UserDTO> userDTOS = new ArrayList<>();
@@ -36,23 +53,50 @@ public class UserService {
   }
 
   public void createUser(UserDTO userDTO) {
-    User user = User.builder().id(userDTO.getId()).name(userDTO.getName()).userName(userDTO.getUserName()).password(userDTO.getPassword()).roleName(userDTO.getRoleName()).build();
+    User user = new User();
+    user.setId((int)generateSequence(User.SEQUENCE_NAME));
+    user.setUserName(userDTO.getUserName());
+    user.setPassword(userDTO.getPassword());
+    user.setRoleName(userDTO.getRoleName());
+    userRepository.save(user);
+  }
 
+  public void updateUser(UserDTO userDTO) {
+    User user = userRepository.findOneById(userDTO.getId());
+    user.setUserName(userDTO.getUserName());
+    user.setPassword(userDTO.getPassword());
+    user.setRoleName(userDTO.getRoleName());
     userRepository.save(user);
   }
 
   public ResponseEntity<?> login(String use, String pass) {
-    for (User item : userRepository.findAll()) {
-      if (item.getUserName().equals(use)) {
+    Date now = new Date();
+    Date expiryDate = new Date(now.getTime() + tokenProvider.JWT_EXPIRATION);
+    LoginInfo loginInfo = new LoginInfo();
+      if (userRepository.findByUserNameAndPassword(use, pass)!=null) {
+        User user = userRepository.findByUserNameAndPassword(use, pass);
+        log.info(loginInfoRepository.findLoginInfoByNameAndStatus(use, 1));
+        if (loginInfoRepository.findLoginInfoByNameAndStatus(use, 1) != null) {
+          cacheManager.deleteValue(loginInfoRepository.findLoginInfoByNameAndStatus(use, 1) .getToken_login());
+          LoginInfo loginInfo1 = loginInfoRepository.findLoginInfoByNameAndStatus(use, 1);
+          loginInfo1.setStatus(0);
+          loginInfo1.setExpiredJwt(expiryDate);
+          loginInfoRepository.deleteLoginInfoByNameAndStatus(use, 1);
+          loginInfoRepository.save(loginInfo1);
+        }
         String jwt = tokenProvider.generateToken(use);
         String refreshToken = tokenProvider.generateFreshToken(use);
-//        String refreshToken = genRefreshToken();
         cacheManager.setTokenValue(refreshToken, use, pass);
+        loginInfo.setId_login(user.getId());
+        loginInfo.setToken_login(jwt);
+        loginInfo.setStatus(1);
+        loginInfo.setName(use);
+        loginInfo.setRoleName(user.getRoleName());
+        loginInfo.setExpiredJwt(expiryDate);
+        loginInfoRepository.save(loginInfo);
         return ResponseEntity.ok(new LoginResponse(jwt, refreshToken));
       }
-    }
-
-    return null;
+    return ResponseEntity.ok(new String("Sai tài khoản, mật khẩu"));
   }
 
   public ResponseEntity<?> refreshToken(TokenRequest refreshTokenRequest) {
@@ -65,24 +109,30 @@ public class UserService {
       String jwt = tokenProvider.generateToken(user.getUserName());
       cacheManager.deleteTokenValue(refreshToken);
       String newRefreshToken = tokenProvider.generateFreshToken(user.getUserName());
-//      String newRefreshToken = genRefreshToken();
       cacheManager.setTokenValue(newRefreshToken, tokenInfo.getUserName(), tokenInfo.getPassword());
       return ResponseEntity.ok(new LoginResponse(jwt, newRefreshToken));
     }
   }
 
+  public ResponseEntity<?> deleteUser(String userName) {
+    userRepository.deleteUserByUserName(userName);
+    return ResponseEntity.ok("Delete success");
+  }
+
   public ResponseEntity<?> logout(String token) {
-    System.out.println(token);
     cacheManager.deleteValue(token);
     return ResponseEntity.ok("logout");
   }
 
-    protected String genRefreshToken() {
-    String token = RandomStringUtils.randomAlphabetic(25);
-    return token;
+  public long generateSequence(String seqName) {
+    Sequence counter =
+        mongoOperations.findAndModify(
+            Query.query(Criteria.where("_id").is(seqName)),
+            new Update().inc("seq", 1),
+            FindAndModifyOptions.options().returnNew(true).upsert(true),
+            Sequence.class);
+    return !Objects.isNull(counter) ? counter.getSeq() : 1;
   }
-
-
 }
 
 

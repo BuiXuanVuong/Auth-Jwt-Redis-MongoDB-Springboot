@@ -6,8 +6,6 @@ import com.example.mongo_user.domain.repositories.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 
 public class UserMapper {
-  @Autowired
-  private UserRepository userRepository;
 
   public static UserDTO toUserDTO(User user) {
     UserDTO userDTO = new UserDTO();
