@@ -1,4 +1,4 @@
-package com.example.mongo_user.domain.services;
+package com.example.mongo_user.domain.services.impl;
 
 import com.example.mongo_user.app.dtos.LoginResponse;
 import com.example.mongo_user.app.dtos.TokenRequest;
@@ -10,6 +10,8 @@ import com.example.mongo_user.domain.entities.User;
 import com.example.mongo_user.domain.models.TokenInfo;
 import com.example.mongo_user.domain.repositories.LoginInfoRepository;
 import com.example.mongo_user.domain.repositories.UserRepository;
+import com.example.mongo_user.domain.services.impl.CacheManager;
+import com.example.mongo_user.domain.services.mapper.UserMapper;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.mongodb.core.FindAndModifyOptions;
@@ -26,12 +28,9 @@ import java.util.Objects;
 
 @Service
 @Log4j2
-public class UserService {
+public class UserService extends CommonService {
   @Autowired
   private UserRepository userRepository;
-
-  @Autowired
-  private MongoOperations mongoOperations;
 
   @Autowired
   private JwtTokenProvider tokenProvider;
@@ -124,15 +123,8 @@ public class UserService {
     return ResponseEntity.ok("logout");
   }
 
-  public long generateSequence(String seqName) {
-    Sequence counter =
-        mongoOperations.findAndModify(
-            Query.query(Criteria.where("_id").is(seqName)),
-            new Update().inc("seq", 1),
-            FindAndModifyOptions.options().returnNew(true).upsert(true),
-            Sequence.class);
-    return !Objects.isNull(counter) ? counter.getSeq() : 1;
-  }
+
+
 }
 
 

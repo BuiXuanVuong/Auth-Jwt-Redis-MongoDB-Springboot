@@ -1,7 +1,6 @@
 package com.example.mongo_user.domain.repositories;
 
 import com.example.mongo_user.domain.entities.LoginInfo;
-import com.example.mongo_user.domain.services.LoginInfoService;
 import org.springframework.data.mongodb.repository.MongoRepository;
 import org.springframework.stereotype.Repository;
 

@@ -1,6 +1,6 @@
 package com.example.mongo_user.domain.filter;
 
-import com.example.mongo_user.domain.services.CacheManager;
+import com.example.mongo_user.domain.services.impl.CacheManager;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -34,7 +34,7 @@ public class AuthFilter implements Filter {
     HttpServletResponse response = (HttpServletResponse) servletResponse;
     String url = request.getRequestURI();
     System.out.println("request.getRequestURI" + url );
-    if ((url.startsWith("/api/users") || url.startsWith("/api/refresh") || url.startsWith("/api/user")) && ((HttpServletRequest) servletRequest).getHeader("token")!= null ) {
+    if ((url.startsWith("/api/users") || url.startsWith("/api/refresh") || url.startsWith("/api/user")) || url.startsWith("/api/question") || url.startsWith("/api/answer") && ((HttpServletRequest) servletRequest).getHeader("token")!= null ) {
       ((HttpServletResponse) servletResponse).setHeader("token",((HttpServletRequest) servletRequest).getHeader("token"));
       filterChain.doFilter(servletRequest, servletResponse);
     } else if (url.startsWith("/login") || url.startsWith("/user")) {

@@ -1,4 +1,4 @@
-package com.example.mongo_user.domain.services;
+package com.example.mongo_user.domain.services.impl;
 
     import com.example.mongo_user.domain.entities.LoginInfo;
     import com.example.mongo_user.domain.repositories.LoginInfoRepository;

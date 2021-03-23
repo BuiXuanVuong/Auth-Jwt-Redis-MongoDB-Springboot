@@ -1,4 +1,4 @@
-package com.example.mongo_user.domain.services;
+package com.example.mongo_user.domain.services.impl;
 
 import com.example.mongo_user.domain.models.TokenInfo;
 import lombok.extern.log4j.Log4j2;

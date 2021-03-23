@@ -1,4 +1,4 @@
-package com.example.mongo_user.domain.services;
+package com.example.mongo_user.domain.services.mapper;
 
 import com.example.mongo_user.app.dtos.UserDTO;
 import com.example.mongo_user.domain.entities.User;
@@ -16,5 +16,7 @@ public class UserMapper {
     userDTO.setRoleName(user.getRoleName());
     return userDTO;
   }
+
+
 
 }

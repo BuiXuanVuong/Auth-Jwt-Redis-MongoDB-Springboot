@@ -2,7 +2,7 @@ package com.example.mongo_user.app.controllers;
 
 import com.example.mongo_user.app.dtos.TokenRequest;
 import com.example.mongo_user.app.dtos.UserDTO;
-import com.example.mongo_user.domain.services.UserService;
+import com.example.mongo_user.domain.services.impl.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
